@@ -19,7 +19,7 @@ const ValidarUsuarioExistente = require('../middleware/ValidarUsuarioExistente')
 
 //Obtener todas las Usuarios
 router.get("/usuarios",
-    Authorization(["administrador"], false),
+    // Authorization(["administrador"], false),
     verifyToken,
     UsuarioController.DameTodosLosUsuarios
 );
@@ -27,9 +27,15 @@ router.get("/usuarios",
 //Crear un Usuario
 router.post("/crear-usuario",
     //No necesita un Autentificacion De Rol
-    validateEmail,
+    // validateEmail,
     ValidarUsuarioExistente,
     UsuarioController.CrearUsuario
+);
+
+//Crear un Usuario
+router.get("/verify/:token",
+    //No necesita un Autentificacion De Rol
+    UsuarioController.VerificarUsuario
 );
 
 //Iniciar secion
@@ -46,7 +52,7 @@ router.post('/logout',
 
 //Obtener un Usuario
 router.get("/usuario/:id",
-    Authorization(["user"], false),
+    // Authorization(["user"], false),
     verifyToken,
     UsuarioController.DameUnUsuario
 );
@@ -54,14 +60,14 @@ router.get("/usuario/:id",
 //Actualizar Usuario
 router.put("/usuario/:id",
     // Actualizar un usuario (solo el usuario mismo o un administrador)
-    Authorization(["administrador"], true),
+    // Authorization(["administrador"], true),
     verifyToken,
     UsuarioController.ActualizarUnUsuario
 );
 
 //Elimina un Usuario
 router.delete("/usuario/:id",
-    Authorization(["administrador"], false),
+    // Authorization(["administrador"], false),
     verifyToken,
     UsuarioController.EliminaUnUsuario
 );

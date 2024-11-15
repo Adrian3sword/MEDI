@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 
 //Hashing: Utiliza un algoritmo de hashing fuerte como bcrypt o Argon2
 // para almacenar las contraseñas de forma segura. Estos algoritmos convierten
@@ -14,6 +15,9 @@ const AsistenteDeToken = require("../middleware/AsistenteDeToken");
 
 const ModeloDeUnaUsuario = require("../models/usuarioModel");
 require("../config/db");
+
+const Correo = process.env.Correo
+const ClaveDeCorreo = process.env.Clave
 
 const controller = {};
 
@@ -41,20 +45,11 @@ controller.DameTodosLosUsuarios = async (req, res) => {
   }
 };
 
-/**
- * Controlador para crear una nueva cuenta.
- * @function
- * @async
- * @param {Object} req - Objeto de solicitud de Express.
- * @param {Object} res - Objeto de respuesta de Express.
- * @returns {Promise<void>} - Una promesa que resuelve en un objeto JSON con el usuario o un objeto JSON con el error.
- */
+
 controller.CrearUsuario = async (req, res) => {
   try {
     const { nombre, email, contraseña, rol, ...rest } = req.body;
     console.log(`email: ${email}`);
-
-    const UsuarioConEmailRepetido = await ModeloDeUnaUsuario.findOne({ email });
 
     // // Al verificar una contraseña utiliza para desencriptar:
     // const isMatch = await bcrypt.compare(password, user.password);
@@ -69,13 +64,37 @@ controller.CrearUsuario = async (req, res) => {
     });
 
     await nuevoUsuario.save();
-    // respuesta JSON.:
-    console.log(`Nuevo Usuario creado: ${email}`);
-
+    
     res.status(201).json(nuevoUsuario);
   } catch (error) {
-    // const errors = controlDeErrores(error);
+    // ... manejo de errores    
     res.status(400).json({ error: error.message });
+  }
+};
+
+// Ruta para verificar la cuenta
+controller.VerificarUsuario = async (req, res) => {
+  const { token } = req.params;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await ModeloDeUnaUsuario.findById(decoded.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: 'Cuenta ya verificada' });
+    }
+
+    user.EstaVerificado = true;
+    user.TokenDeVerificacion = undefined;
+    await user.save();
+
+    res.status(200).json({ message: 'Cuenta verificada exitosamente' });
+  } catch (error) {
+    // ... manejo de errores
   }
 };
 
@@ -194,8 +213,6 @@ controller.ActualizarUnUsuario = async (req, res) => {
     res.status(500).json({ message: 'Error al actualizar el usuario' });
   }
 };
-
-
 
 /**
  * Controlador para eliminar una Cuenta existente.
